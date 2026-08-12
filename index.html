@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학원 설명회 신청 시스템</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-color: #0f172a;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; }
+    body { background: var(--bg-color); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 20px 10px; color: var(--text-main); }
+    
+    .app-container { width: 100%; max-width: 800px; background: var(--card-bg); border-radius: 20px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); margin-top: 20px; }
+    
+    header { border-bottom: 2px solid var(--border-color); padding-bottom: 20px; margin-bottom: 25px; text-align: center; }
+    header h1 { font-size: 22px; font-weight: 700; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; }
+    
+    .tab-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+    .tab-btn { padding: 10px 20px; border-radius: 10px; border: 1px solid var(--border-color); background: #f8fafc; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; color: var(--text-muted); flex: 1; min-width: 120px; max-width: 200px; }
+    .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+    
+    .view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .status-box { background: #f1f5f9; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 25px; }
+    .status-box .label { font-size: 13px; color: var(--text-muted); }
+    .status-box .count { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 5px; }
+    .status-box .full-msg { color: var(--danger); font-size: 18px; font-weight: 700; display: none; margin-top: 5px; }
+    
+    .form-group { margin-bottom: 20px; text-align: left; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+    .form-control { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    
+    .btn { background: var(--primary); color: white; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 600; font-size: 15px; width: 100%; cursor: pointer; transition: 0.2s; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: var(--danger-hover); }
+    
+    /* 마이페이지 카드 스타일 */
+    .ticket-card { background: white; border: 2px solid var(--primary); border-radius: 16px; overflow: hidden; margin-top: 20px; text-align: left; }
+    .ticket-header { background: var(--primary); color: white; padding: 15px 20px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+    .ticket-body { padding: 20px; }
+    .ticket-info { margin-bottom: 15px; font-size: 14px; line-height: 1.6; }
+    .ticket-info strong { color: var(--text-main); display: inline-block; width: 50px; }
+    .map-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border-color); margin-top: 10px; }
+    
+    /* 관리자 테이블 스타일 */
+    .table-responsive { overflow-x: auto; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); white-space: nowrap; }
+    th, td { padding: 12px 15px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    th { background: #f1f5f9; color: var(--text-main); font-weight: 600; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    
+    .auth-box { max-width: 400px; margin: 20px auto; text-align: center; }
+
+    /* 경고 문구 강조 스타일 */
+    .notice-text {
+      color: var(--danger);
+      font-size: 17px;
+      font-weight: 800;
+      text-align: center;
+      margin-top: 25px;
+      line-height: 1.5;
+      word-break: keep-all;
+      background-color: #fee2e2;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #fca5a5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <h1><i class="fa-solid fa-bullhorn"></i> 학원 특별 설명회</h1>
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('apply')">신청하기</button>
+        <button class="tab-btn" onclick="switchTab('mypage')">마이페이지</button>
+        <button class="tab-btn" onclick="switchTab('admin')">관리자</button>
+      </div>
+    </header>
+
+    <!-- 1. 신청하기 화면 -->
+    <div id="applyView" class="view-section active">
+      <div style="max-width: 450px; margin: 0 auto;">
+        <div class="status-box">
+          <div id="seatStatus">
+            <div class="label">현재 잔여 좌석</div>
+            <div class="count"><span id="remainingSeats">...</span> / 310</div>
+          </div>
+          <div id="fullMessage" class="full-msg"><i class="fa-solid fa-circle-exclamation"></i> 모든 좌석이 마감되었습니다.</div>
+        </div>
+
+        <div id="applyForm">
+          <div class="form-group">
+            <label>학생 인적사항</label>
+            <input type="text" id="applyStudentInfo" class="form-control" placeholder="예: 홍길동 / 청라고1">
+          </div>
+          <div class="form-group">
+            <label>학부모 연락처 (숫자만 입력)</label>
+            <input type="tel" id="applyPhone" class="form-control" placeholder="01012345678" maxlength="11">
+          </div>
+          <button id="submitBtn" class="btn" onclick="submitApplication()"><i class="fa-solid fa-check"></i> 신청하기</button>
+          
+          <!-- 안내 문구 -->
+          <div class="notice-text">
+            <i class="fa-solid fa-circle-exclamation"></i> 신청완료 여부는<br>'마이페이지' 칸에서 확인 가능합니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 마이페이지 화면 -->
+    <div id="mypageView" class="view-section">
+      <div id="mypageLoginBox" class="auth-box">
+        <h3 style="margin-bottom: 15px; font-size: 18px;"><i class="fa-regular fa-id-card"></i> 신청 내역 조회</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">신청 시 입력하신 정보를 동일하게 입력해주세요.</p>
+        <div class="form-group">
+          <input type="text" id="loginStudentInfo" class="form-control" placeholder="학생 인적사항 (예: 홍길동 / 청라고1)">
+        </div>
+        <div class="form-group">
+          <input type="tel" id="loginPhone" class="form-control" placeholder="학부모 연락처 (숫자만)" maxlength="11">
+        </div>
+        <button class="btn" onclick="checkMyPage()"><i class="fa-solid fa-magnifying-glass"></i> 조회하기</button>
+      </div>
+
+      <div id="mypageResultBox" style="display: none; max-width: 500px; margin: 0 auto;">
+        <div style="text-align: right;">
+          <button class="btn" style="width: auto; padding: 8px 12px; font-size: 13px;" onclick="logoutMyPage()">다른 정보로 조회</button>
+        </div>
+        
+        <div class="ticket-card">
+          <div class="ticket-header">
+            <i class="fa-solid fa-ticket"></i> 설명회 참석 티켓 (신청 완료)
+          </div>
+          <div class="ticket-body">
+            <div class="ticket-info">
+              <div><strong>신청자:</strong> <span id="mpStudentName"></span></div>
+              <div><strong>연락처:</strong> <span id="mpPhone"></span></div>
+            </div>
+            <hr style="border:0; border-top:1px dashed var(--border-color); margin: 15px 0;">
+            <div class="ticket-info">
+              <div><strong>일시:</strong> 2026년 8월 30일(일) 오후 2:00</div>
+              <div><strong>장소:</strong> 스마트 학원 본관 대강당 3층</div>
+            </div>
+            <!-- 약도 이미지 (최민준 폴더 내 로컬 경로) -->
+            <img src="약도.jpg" alt="오시는 길 약도" class="map-img">
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">입장 시 이 화면을 접수처에 보여주세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 관리자 화면 -->
+    <div id="adminView" class="view-section">
+      <div id="adminLoginBox" class="auth-box">
+        <h3 style="margin-bottom: 15px; font-size: 18px;"><i class="fa-solid fa-lock"></i> 관리자 인증</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">설정된 관리자 비밀번호를 입력해주세요.</p>
+        <div class="form-group">
+          <input type="password" id="adminPw" class="form-control" placeholder="비밀번호 입력">
+        </div>
+        <button class="btn" onclick="checkAdmin()"><i class="fa-solid fa-right-to-bracket"></i> 로그인</button>
+      </div>
+
+      <div id="adminDashboard" style="display: none;">
+        <div class="admin-header">
+          <h3 style="font-size: 18px;"><i class="fa-solid fa-users"></i> 신청자 명단 (<span id="totalApplicantsCount">0</span>명)</h3>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-success" style="width: auto; padding: 10px 15px;" onclick="downloadExcel()"><i class="fa-solid fa-file-excel"></i> 엑셀 다운로드</button>
+            <button class="btn" style="width: auto; padding: 10px 15px; background: var(--text-muted);" onclick="logoutAdmin()">로그아웃</button>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>순번</th>
+                <th>학생 인적사항</th>
+                <th>학부모 연락처</th>
+                <th>신청 일시</th>
+                <th style="text-align: center;">관리</th> <!-- 관리(삭제) 열 추가 -->
+              </tr>
+            </thead>
+            <tbody id="adminTableBody">
+              <!-- 데이터가 여기에 렌더링 됩니다 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 이 부분을 새로 만든 프로젝트의 정보로 교체해주세요!
+    const SUPABASE_URL = 'https://haaiwbjdlqwrfrvsurxi.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhYWl3YmpkbHF3cmZydnN1cnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTQ1NjQsImV4cCI6MjEwMjA5MDU2NH0.hiMuLbrgkF2W_-PR5dfwmqI2TAOLi3yJv25_iCMovFE';
+    
+    const { createClient } = supabase;
+    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const MAX_SEATS = 310;
+    const ADMIN_PW = "8566";
+    let adminData = []; 
+
+    // --- 탭 전환 로직 ---
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabId + 'View').classList.add('active');
+
+      if(tabId === 'apply') checkSeats();
+    }
+
+    // --- 1. 신청하기 로직 ---
+    async function checkSeats() {
+      try {
+        const { count, error } = await _supabase
+          .from('seminar_apps')
+          .select('*', { count: 'exact', head: true });
+
+        if (error) throw error;
+
+        const remaining = MAX_SEATS - count;
+        document.getElementById('remainingSeats').innerText = remaining > 0 ? remaining : 0;
+
+        if (remaining <= 0) {
+          document.getElementById('seatStatus').style.display = 'none';
+          document.getElementById('fullMessage').style.display = 'block';
+          document.getElementById('submitBtn').disabled = true;
+          document.getElementById('submitBtn').innerText = '마감되었습니다';
+          document.getElementById('applyStudentInfo').disabled = true;
+          document.getElementById('applyPhone').disabled = true;
+        } else {
+          document.getElementById('seatStatus').style.display = 'block';
+          document.getElementById('fullMessage').style.display = 'none';
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').innerHTML = '<i class="fa-solid fa-check"></i> 신청하기';
+          document.getElementById('applyStudentInfo').disabled = false;
+          document.getElementById('applyPhone').disabled = false;
+        }
+      } catch (err) {
+        console.error('좌석 조회 실패:', err);
+      }
+    }
+
+    async function submitApplication() {
+      const studentInfo = document.getElementById('applyStudentInfo').value.trim();
+      const parentPhone = document.getElementById('applyPhone').value.replace(/[^0-9]/g, '');
+
+      if (!studentInfo || !parentPhone) {
+        alert('학생 인적사항과 학부모 연락처를 모두 입력해주세요.'); return;
+      }
+      if (parentPhone.length < 10) {
+        alert('올바른 연락처 형식이 아닙니다.'); return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 처리 중...';
+
+      try {
+        const { data: existing, error: checkErr } = await _supabase
+          .from('seminar_apps')
+          .select('id')
+          .eq('parent_phone', parentPhone)
+          .single();
+
+        if (existing) {
+          alert('이미 해당 연락처로 신청된 내역이 존재합니다.');
+          resetApplyButton(); return;
+        }
+
+        const { error: insertErr } = await _supabase
+          .from('seminar_apps')
+          .insert([{ student_info: studentInfo, parent_phone: parentPhone }]);
+
+        if (insertErr) {
+          if (insertErr.code === '23505') alert('이미 해당 연락처로 신청된 내역이 존재합니다.');
+          else throw insertErr;
+        } else {
+          alert('설명회 신청이 완료되었습니다! 마이페이지에서 모바일 티켓을 확인하세요.');
+          document.getElementById('applyStudentInfo').value = '';
+          document.getElementById('applyPhone').value = '';
+          checkSeats();
+        }
+      } catch (err) {
+        console.error('신청 오류:', err);
+        alert('신청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } finally {
+        resetApplyButton();
+      }
+    }
+
+    function resetApplyButton() {
+      const btn = document.getElementById('submitBtn');
+      if (btn.innerText !== '마감되었습니다') {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> 신청하기';
+      }
+    }
+
+    // --- 2. 마이페이지 로직 ---
+    async function checkMyPage() {
+      const studentInfo = document.getElementById('loginStudentInfo').value.trim();
+      const parentPhone = document.getElementById('loginPhone').value.replace(/[^0-9]/g, '');
+
+      if (!studentInfo || !parentPhone) {
+        alert('정보를 모두 입력해주세요.'); return;
+      }
+
+      try {
+        const { data, error } = await _supabase
+          .from('seminar_apps')
+          .select('*')
+          .eq('parent_phone', parentPhone)
+          .eq('student_info', studentInfo)
+          .single();
+
+        if (error || !data) {
+          alert('일치하는 신청 내역이 없습니다. 띄어쓰기 등 입력 정보를 다시 확인해주세요.');
+          return;
+        }
+
+        document.getElementById('mypageLoginBox').style.display = 'none';
+        document.getElementById('mypageResultBox').style.display = 'block';
+        
+        document.getElementById('mpStudentName').innerText = data.student_info;
+        
+        let formatPhone = data.parent_phone;
+        if(formatPhone.length === 11) {
+          formatPhone = formatPhone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        }
+        document.getElementById('mpPhone').innerText = formatPhone;
+
+      } catch (err) {
+        console.error('조회 오류:', err);
+        alert('조회 중 오류가 발생했습니다.');
+      }
+    }
+
+    function logoutMyPage() {
+      document.getElementById('loginStudentInfo').value = '';
+      document.getElementById('loginPhone').value = '';
+      document.getElementById('mypageLoginBox').style.display = 'block';
+      document.getElementById('mypageResultBox').style.display = 'none';
+    }
+
+    // --- 3. 관리자 로직 ---
+    function checkAdmin() {
+      const pw = document.getElementById('adminPw').value;
+      if (pw === ADMIN_PW) {
+        document.getElementById('adminLoginBox').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        loadAdminData();
+      } else {
+        alert('비밀번호가 틀렸습니다.');
+      }
+    }
+
+    function logoutAdmin() {
+      document.getElementById('adminPw').value = '';
+      document.getElementById('adminLoginBox').style.display = 'block';
+      document.getElementById('adminDashboard').style.display = 'none';
+    }
+
+    async function loadAdminData() {
+      const tbody = document.getElementById('adminTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">데이터를 불러오는 중...</td></tr>';
+
+      try {
+        const { data, error } = await _supabase
+          .from('seminar_apps')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        
+        adminData = data; 
+        document.getElementById('totalApplicantsCount').innerText = data.length;
+
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">신청자가 없습니다.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map((app, index) => {
+          const dateObj = new Date(app.created_at);
+          const dateStr = dateObj.getFullYear() + '-' + 
+                         String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(dateObj.getDate()).padStart(2, '0') + ' ' +
+                         String(dateObj.getHours()).padStart(2, '0') + ':' +
+                         String(dateObj.getMinutes()).padStart(2, '0');
+                         
+          let phone = app.parent_phone;
+          if(phone.length === 11) phone = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+
+          return `
+            <tr>
+              <td>${index + 1}</td>
+              <td><strong>${app.student_info}</strong></td>
+              <td>${phone}</td>
+              <td>${dateStr}</td>
+              <td style="text-align: center;">
+                <button class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 12px; border-radius: 6px;" onclick="deleteApplicant(${app.id})">
+                  삭제
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('관리자 데이터 로드 실패:', err);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>';
+      }
+    }
+
+    // --- 4. 개별 신청 내역 삭제 기능 ---
+    async function deleteApplicant(id) {
+      if (!confirm('정말로 이 신청 내역을 삭제하시겠습니까?\n(삭제 후 데이터베이스에서 완전히 지워집니다.)')) return;
+
+      try {
+        const { error } = await _supabase
+          .from('seminar_apps')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        alert('성공적으로 삭제되었습니다.');
+        
+        // 삭제 후 테이블 및 남은 좌석 다시 불러오기
+        loadAdminData();
+        checkSeats();
+      } catch (err) {
+        console.error('삭제 실패:', err);
+        alert('삭제 중 오류가 발생했습니다.');
+      }
+    }
+
+    function downloadExcel() {
+      if (adminData.length === 0) {
+        alert('다운로드할 데이터가 없습니다.'); return;
+      }
+
+      let csvContent = "\uFEFF순번,학생 인적사항,학부모 연락처,신청 일시\n";
+      
+      adminData.forEach((app, index) => {
+        let phone = app.parent_phone;
+        if(phone.length === 11) phone = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        
+        const dateObj = new Date(app.created_at);
+        const dateStr = dateObj.toLocaleString('ko-KR');
+
+        csvContent += `"${index + 1}","${app.student_info}","${phone}","${dateStr}"\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '설명회_신청자_명단.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // 초기 로딩 시 좌석 수 체크
+    checkSeats();
+  </script>
+</body>
+</html>
