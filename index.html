@@ -109,57 +109,17 @@
       opacity: 0; visibility: hidden;
       transition: all 0.3s ease;
     }
-    .popup-overlay.show {
-      opacity: 1; visibility: visible;
-    }
+    .popup-overlay.show { opacity: 1; visibility: visible; }
     .popup-content {
-      background: white;
-      width: 90%; max-width: 400px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      transform: translateY(20px);
-      transition: all 0.3s ease;
+      background: white; width: 90%; max-width: 400px; border-radius: 16px; overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: translateY(20px); transition: all 0.3s ease;
     }
-    .popup-overlay.show .popup-content {
-      transform: translateY(0);
-    }
-    .popup-header {
-      background: var(--danger);
-      color: white;
-      padding: 15px 20px;
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .popup-body {
-      padding: 25px 20px;
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--text-main);
-      word-break: keep-all;
-    }
-    .popup-footer {
-      padding: 12px 20px;
-      background: #f8fafc;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .popup-checkbox-label {
-      font-size: 13px;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .popup-checkbox-label input {
-      width: 16px; height: 16px; cursor: pointer;
-    }
+    .popup-overlay.show .popup-content { transform: translateY(0); }
+    .popup-header { background: var(--danger); color: white; padding: 15px 20px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .popup-body { padding: 25px 20px; font-size: 14px; line-height: 1.6; color: var(--text-main); word-break: keep-all; }
+    .popup-footer { padding: 12px 20px; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .popup-checkbox-label { font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .popup-checkbox-label input { width: 16px; height: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -208,8 +168,12 @@
 
         <div id="applyForm">
           <div class="form-group">
-            <label>학생 인적사항</label>
-            <input type="text" id="applyStudentInfo" class="form-control" placeholder="예: 홍길동/청라고1">
+            <label>학생 이름</label>
+            <input type="text" id="applyStudentName" class="form-control" placeholder="예: 홍길동">
+          </div>
+          <div class="form-group">
+            <label>학교 및 학년</label>
+            <input type="text" id="applyStudentSchool" class="form-control" placeholder="예: 청라고1">
           </div>
           <div class="form-group">
             <label>학부모 연락처 (숫자만 입력)</label>
@@ -235,10 +199,7 @@
     <div id="mypageView" class="view-section">
       <div id="mypageLoginBox" class="auth-box">
         <h3 style="margin-bottom: 15px; font-size: 18px;"><i class="fa-regular fa-id-card"></i> 신청 내역 조회</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">신청 시 입력하신 정보를 동일하게 입력해주세요.</p>
-        <div class="form-group">
-          <input type="text" id="loginStudentInfo" class="form-control" placeholder="학생 인적사항 (예: 홍길동/청라고1)">
-        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">신청 시 입력하신 학부모 연락처만 입력해주세요.</p>
         <div class="form-group">
           <input type="tel" id="loginPhone" class="form-control" placeholder="학부모 연락처 (숫자만)" maxlength="11">
         </div>
@@ -256,7 +217,7 @@
           </div>
           <div class="ticket-body">
             <div class="ticket-info">
-              <div><strong>신청자:</strong> <span id="mpStudentName"></span></div>
+              <div><strong>신청자:</strong> <span id="mpStudentName"></span> <span style="font-size: 12px; color: var(--text-muted);">(<span id="mpStudentSchool"></span>)</span></div>
               <div><strong>연락처:</strong> <span id="mpPhone"></span></div>
             </div>
             <hr style="border:0; border-top:1px dashed var(--border-color); margin: 15px 0;">
@@ -296,7 +257,8 @@
             <thead>
               <tr>
                 <th>순번</th>
-                <th>학생 인적사항</th>
+                <th>학생 이름</th>
+                <th>학교/학년</th>
                 <th>학부모 연락처</th>
                 <th>신청 일시</th>
                 <th style="text-align: center;">관리</th>
@@ -325,7 +287,6 @@
 
     // --- 팝업 로직 ---
     function checkAndShowPopup() {
-      // 로컬 스토리지에 오늘 날짜로 팝업 숨김 처리가 되어있는지 확인
       const hideDate = localStorage.getItem('hideSeminarPopup');
       const today = new Date().toLocaleDateString();
 
@@ -335,13 +296,11 @@
     }
 
     function closePopup() {
-      // 오늘 하루 보지 않기가 체크되어 있으면 로컬 스토리지에 오늘 날짜 저장
       const isChecked = document.getElementById('hidePopupCheckbox').checked;
       if (isChecked) {
         const today = new Date().toLocaleDateString();
         localStorage.setItem('hideSeminarPopup', today);
       }
-      
       document.getElementById('welcomePopup').classList.remove('show');
     }
 
@@ -373,14 +332,16 @@
           document.getElementById('fullMessage').style.display = 'block';
           document.getElementById('submitBtn').disabled = true;
           document.getElementById('submitBtn').innerText = '마감되었습니다';
-          document.getElementById('applyStudentInfo').disabled = true;
+          document.getElementById('applyStudentName').disabled = true;
+          document.getElementById('applyStudentSchool').disabled = true;
           document.getElementById('applyPhone').disabled = true;
         } else {
           document.getElementById('seatStatus').style.display = 'block';
           document.getElementById('fullMessage').style.display = 'none';
           document.getElementById('submitBtn').disabled = false;
           document.getElementById('submitBtn').innerHTML = '<i class="fa-solid fa-check"></i> 신청하기';
-          document.getElementById('applyStudentInfo').disabled = false;
+          document.getElementById('applyStudentName').disabled = false;
+          document.getElementById('applyStudentSchool').disabled = false;
           document.getElementById('applyPhone').disabled = false;
         }
       } catch (err) {
@@ -389,11 +350,12 @@
     }
 
     async function submitApplication() {
-      const studentInfo = document.getElementById('applyStudentInfo').value.trim();
+      const studentName = document.getElementById('applyStudentName').value.trim();
+      const studentSchool = document.getElementById('applyStudentSchool').value.trim();
       const parentPhone = document.getElementById('applyPhone').value.replace(/[^0-9]/g, '');
 
-      if (!studentInfo || !parentPhone) {
-        alert('학생 인적사항과 학부모 연락처를 모두 입력해주세요.'); return;
+      if (!studentName || !studentSchool || !parentPhone) {
+        alert('이름, 학교, 학부모 연락처를 모두 입력해주세요.'); return;
       }
       if (parentPhone.length < 10) {
         alert('올바른 연락처 형식이 아닙니다.'); return;
@@ -417,14 +379,15 @@
 
         const { error: insertErr } = await _supabase
           .from('seminar_apps')
-          .insert([{ student_info: studentInfo, parent_phone: parentPhone }]);
+          .insert([{ student_name: studentName, student_school: studentSchool, parent_phone: parentPhone }]);
 
         if (insertErr) {
           if (insertErr.code === '23505') alert('이미 해당 연락처로 신청된 내역이 존재합니다.');
           else throw insertErr;
         } else {
           alert('설명회 신청이 완료되었습니다! 마이페이지에서 모바일 티켓을 확인하세요.');
-          document.getElementById('applyStudentInfo').value = '';
+          document.getElementById('applyStudentName').value = '';
+          document.getElementById('applyStudentSchool').value = '';
           document.getElementById('applyPhone').value = '';
           checkSeats();
         }
@@ -446,11 +409,10 @@
 
     // --- 2. 마이페이지 로직 ---
     async function checkMyPage() {
-      const studentInfo = document.getElementById('loginStudentInfo').value.trim();
       const parentPhone = document.getElementById('loginPhone').value.replace(/[^0-9]/g, '');
 
-      if (!studentInfo || !parentPhone) {
-        alert('정보를 모두 입력해주세요.'); return;
+      if (!parentPhone) {
+        alert('연락처를 입력해주세요.'); return;
       }
 
       try {
@@ -458,18 +420,18 @@
           .from('seminar_apps')
           .select('*')
           .eq('parent_phone', parentPhone)
-          .eq('student_info', studentInfo)
           .single();
 
         if (error || !data) {
-          alert('일치하는 신청 내역이 없습니다. 띄어쓰기 등 입력 정보를 다시 확인해주세요.');
+          alert('일치하는 신청 내역이 없습니다. 입력하신 연락처를 다시 확인해주세요.');
           return;
         }
 
         document.getElementById('mypageLoginBox').style.display = 'none';
         document.getElementById('mypageResultBox').style.display = 'block';
         
-        document.getElementById('mpStudentName').innerText = data.student_info;
+        document.getElementById('mpStudentName').innerText = data.student_name;
+        document.getElementById('mpStudentSchool').innerText = data.student_school;
         
         let formatPhone = data.parent_phone;
         if(formatPhone.length === 11) {
@@ -484,7 +446,6 @@
     }
 
     function logoutMyPage() {
-      document.getElementById('loginStudentInfo').value = '';
       document.getElementById('loginPhone').value = '';
       document.getElementById('mypageLoginBox').style.display = 'block';
       document.getElementById('mypageResultBox').style.display = 'none';
@@ -510,7 +471,7 @@
 
     async function loadAdminData() {
       const tbody = document.getElementById('adminTableBody');
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">데이터를 불러오는 중...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">데이터를 불러오는 중...</td></tr>';
 
       try {
         const { data, error } = await _supabase
@@ -524,7 +485,7 @@
         document.getElementById('totalApplicantsCount').innerText = data.length;
 
         if (data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">신청자가 없습니다.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">신청자가 없습니다.</td></tr>';
           return;
         }
 
@@ -542,7 +503,8 @@
           return `
             <tr>
               <td>${index + 1}</td>
-              <td><strong>${app.student_info}</strong></td>
+              <td><strong>${app.student_name}</strong></td>
+              <td>${app.student_school}</td>
               <td>${phone}</td>
               <td>${dateStr}</td>
               <td style="text-align: center;">
@@ -556,7 +518,7 @@
 
       } catch (err) {
         console.error('관리자 데이터 로드 실패:', err);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>';
       }
     }
 
@@ -586,7 +548,7 @@
         alert('다운로드할 데이터가 없습니다.'); return;
       }
 
-      let csvContent = "\uFEFF순번,학생 인적사항,학부모 연락처,신청 일시\n";
+      let csvContent = "\uFEFF순번,학생 이름,학교/학년,학부모 연락처,신청 일시\n";
       
       adminData.forEach((app, index) => {
         let phone = app.parent_phone;
@@ -595,7 +557,7 @@
         const dateObj = new Date(app.created_at);
         const dateStr = dateObj.toLocaleString('ko-KR');
 
-        csvContent += `"${index + 1}","${app.student_info}","${phone}","${dateStr}"\n`;
+        csvContent += `"${index + 1}","${app.student_name}","${app.student_school}","${phone}","${dateStr}"\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
