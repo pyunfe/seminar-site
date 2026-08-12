@@ -71,19 +71,39 @@
     
     .auth-box { max-width: 400px; margin: 20px auto; text-align: center; }
 
-    /* 경고 문구 강조 스타일 */
-    .notice-text {
-      color: var(--danger);
-      font-size: 17px;
-      font-weight: 800;
-      text-align: center;
-      margin-top: 25px;
-      line-height: 1.5;
-      word-break: keep-all;
+    /* 새롭게 추가된 안내사항 박스 스타일 */
+    .notice-box {
       background-color: #fee2e2;
-      padding: 15px;
-      border-radius: 10px;
+      padding: 20px;
+      border-radius: 12px;
       border: 1px solid #fca5a5;
+      margin-top: 25px;
+      text-align: left;
+    }
+    .notice-title {
+      color: #991b1b;
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px dashed #f87171;
+      padding-bottom: 10px;
+    }
+    .notice-text-content {
+      font-size: 13.5px;
+      color: #7f1d1d;
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+    .notice-text-content strong {
+      color: #991b1b;
+      margin-right: 3px;
+    }
+    .notice-sub {
+      opacity: 0.85;
+      font-size: 12.5px;
     }
   </style>
 </head>
@@ -121,9 +141,16 @@
           </div>
           <button id="submitBtn" class="btn" onclick="submitApplication()"><i class="fa-solid fa-check"></i> 신청하기</button>
           
-          <!-- 안내 문구 -->
-          <div class="notice-text">
-            <i class="fa-solid fa-circle-exclamation"></i> 신청완료 여부는<br>'마이페이지' 칸에서 확인 가능합니다.
+          <!-- 새롭게 구성된 안내사항 박스 -->
+          <div class="notice-box">
+            <div class="notice-title"><i class="fa-solid fa-circle-exclamation"></i> 필독 안내사항</div>
+            <div class="notice-text-content">
+              <strong>1.</strong> 신청완료 여부는 '마이페이지' 칸에서 확인 가능합니다.<br><br>
+              <strong>2.</strong> 주차 공간이 협소하오니, 가급적 대중교통 이용을 권장합니다.<br>
+              <span class="notice-sub">(만차 시, 주변 공영 주차장 이용 바랍니다.)</span><br><br>
+              <strong>3.</strong> 본 강연은 따로 좌석이 정해져 있지 않습니다. 강연 10분 전까지 입장 부탁드립니다.<br>
+              <span class="notice-sub">(일찍 오실수록 좋은 자리를 선점할 수 있습니다.)</span>
+            </div>
           </div>
         </div>
       </div>
@@ -159,12 +186,12 @@
             </div>
             <hr style="border:0; border-top:1px dashed var(--border-color); margin: 15px 0;">
             <div class="ticket-info">
-              <div><strong>일시:</strong> 2026년 9월 15일(화) 오후 7시</div>
-              <div><strong>장소:</strong> 엘림아트센터</div>
+              <div><strong>일시:</strong> 2026년 8월 30일(일) 오후 2:00</div>
+              <div><strong>장소:</strong> 스마트 학원 본관 대강당 3층</div>
             </div>
             <!-- 약도 이미지 (최민준 폴더 내 로컬 경로) -->
             <img src="map.jpg" alt="오시는 길 약도" class="map-img">
-            <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">인천 서해구 크리스탈로 78 엘림존 6층</p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">입장 시 이 화면을 접수처에 보여주세요.</p>
           </div>
         </div>
       </div>
@@ -212,7 +239,7 @@
   </div>
 
   <script>
-    // 이 부분을 새로 만든 프로젝트의 정보로 교체해주세요!
+    // 이 부분을 새로 만든 프로젝트의 정보로 꼭 교체해주세요!
     const SUPABASE_URL = 'https://haaiwbjdlqwrfrvsurxi.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhYWl3YmpkbHF3cmZydnN1cnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTQ1NjQsImV4cCI6MjEwMjA5MDU2NH0.hiMuLbrgkF2W_-PR5dfwmqI2TAOLi3yJv25_iCMovFE';
     
