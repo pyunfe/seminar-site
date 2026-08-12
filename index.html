@@ -71,7 +71,7 @@
     
     .auth-box { max-width: 400px; margin: 20px auto; text-align: center; }
 
-    /* 새롭게 추가된 안내사항 박스 스타일 */
+    /* 안내사항 박스 스타일 */
     .notice-box {
       background-color: #fee2e2;
       padding: 20px;
@@ -97,17 +97,93 @@
       line-height: 1.6;
       word-break: keep-all;
     }
-    .notice-text-content strong {
-      color: #991b1b;
-      margin-right: 3px;
+    .notice-text-content strong { color: #991b1b; margin-right: 3px; }
+    .notice-sub { opacity: 0.85; font-size: 12.5px; }
+
+    /* 팝업(모달) 스타일 */
+    .popup-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+      opacity: 0; visibility: hidden;
+      transition: all 0.3s ease;
     }
-    .notice-sub {
-      opacity: 0.85;
-      font-size: 12.5px;
+    .popup-overlay.show {
+      opacity: 1; visibility: visible;
+    }
+    .popup-content {
+      background: white;
+      width: 90%; max-width: 400px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    .popup-overlay.show .popup-content {
+      transform: translateY(0);
+    }
+    .popup-header {
+      background: var(--danger);
+      color: white;
+      padding: 15px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .popup-body {
+      padding: 25px 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-main);
+      word-break: keep-all;
+    }
+    .popup-footer {
+      padding: 12px 20px;
+      background: #f8fafc;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popup-checkbox-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .popup-checkbox-label input {
+      width: 16px; height: 16px; cursor: pointer;
     }
   </style>
 </head>
 <body>
+
+  <!-- 진입 팝업 -->
+  <div id="welcomePopup" class="popup-overlay">
+    <div class="popup-content">
+      <div class="popup-header">
+        <i class="fa-solid fa-bell"></i> 공지사항
+      </div>
+      <div class="popup-body">
+        <strong>[스마트 학원 설명회 신청 안내]</strong><br><br>
+        본 설명회는 <strong>선착순 310명</strong>으로 마감됩니다.<br>
+        빠른 신청 부탁드리며, 주차 공간이 협소하오니 가급적 대중교통을 이용해 주시기 바랍니다.<br><br>
+        자세한 내용은 신청 페이지 하단의 <strong>필독 안내사항</strong>을 확인해 주세요.
+      </div>
+      <div class="popup-footer">
+        <label class="popup-checkbox-label">
+          <input type="checkbox" id="hidePopupCheckbox"> 오늘 하루 보지 않기
+        </label>
+        <button class="btn" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="closePopup()">닫기</button>
+      </div>
+    </div>
+  </div>
 
   <div class="app-container">
     <header>
@@ -133,7 +209,7 @@
         <div id="applyForm">
           <div class="form-group">
             <label>학생 인적사항</label>
-            <input type="text" id="applyStudentInfo" class="form-control" placeholder="예: 홍길동 / 청라고1">
+            <input type="text" id="applyStudentInfo" class="form-control" placeholder="예: 홍길동/청라고1">
           </div>
           <div class="form-group">
             <label>학부모 연락처 (숫자만 입력)</label>
@@ -141,7 +217,6 @@
           </div>
           <button id="submitBtn" class="btn" onclick="submitApplication()"><i class="fa-solid fa-check"></i> 신청하기</button>
           
-          <!-- 새롭게 구성된 안내사항 박스 -->
           <div class="notice-box">
             <div class="notice-title"><i class="fa-solid fa-circle-exclamation"></i> 필독 안내사항</div>
             <div class="notice-text-content">
@@ -149,7 +224,7 @@
               <strong>2.</strong> 주차 공간이 협소하오니, 가급적 대중교통 이용을 권장합니다.<br>
               <span class="notice-sub">(만차 시, 주변 공영 주차장 이용 바랍니다.)</span><br><br>
               <strong>3.</strong> 본 강연은 따로 좌석이 정해져 있지 않습니다. 강연 10분 전까지 입장 부탁드립니다.<br>
-              <span class="notice-sub">(일찍 오실수록 좋은 자리를 선점하실 수 있습니다.)</span>
+              <span class="notice-sub">(일찍 오실수록 좋은 자리를 선점할 수 있습니다.)</span>
             </div>
           </div>
         </div>
@@ -162,7 +237,7 @@
         <h3 style="margin-bottom: 15px; font-size: 18px;"><i class="fa-regular fa-id-card"></i> 신청 내역 조회</h3>
         <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">신청 시 입력하신 정보를 동일하게 입력해주세요.</p>
         <div class="form-group">
-          <input type="text" id="loginStudentInfo" class="form-control" placeholder="학생 인적사항 (예: 홍길동 / 청라고1)">
+          <input type="text" id="loginStudentInfo" class="form-control" placeholder="학생 인적사항 (예: 홍길동/청라고1)">
         </div>
         <div class="form-group">
           <input type="tel" id="loginPhone" class="form-control" placeholder="학부모 연락처 (숫자만)" maxlength="11">
@@ -186,12 +261,11 @@
             </div>
             <hr style="border:0; border-top:1px dashed var(--border-color); margin: 15px 0;">
             <div class="ticket-info">
-              <div><strong>일시:</strong> 2026년 8월 30일(일) 오후 2:00</div>
-              <div><strong>장소:</strong> 스마트 학원 본관 대강당 3층</div>
+              <div><strong>일시:</strong> 2026년 9월 15일(화) 오후 7시</div>
+              <div><strong>장소:</strong> 엘림아트센터 엘림홀</div>
             </div>
-            <!-- 약도 이미지 (최민준 폴더 내 로컬 경로) -->
             <img src="map.jpg" alt="오시는 길 약도" class="map-img">
-            <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">입장 시 이 화면을 접수처에 보여주세요.</p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; text-align: center;">인천 서해구 크리스탈로 78 엘림존 6층</p>
           </div>
         </div>
       </div>
@@ -225,11 +299,10 @@
                 <th>학생 인적사항</th>
                 <th>학부모 연락처</th>
                 <th>신청 일시</th>
-                <th style="text-align: center;">관리</th> <!-- 관리(삭제) 열 추가 -->
+                <th style="text-align: center;">관리</th>
               </tr>
             </thead>
             <tbody id="adminTableBody">
-              <!-- 데이터가 여기에 렌더링 됩니다 -->
             </tbody>
           </table>
         </div>
@@ -249,6 +322,28 @@
     const MAX_SEATS = 310;
     const ADMIN_PW = "8566";
     let adminData = []; 
+
+    // --- 팝업 로직 ---
+    function checkAndShowPopup() {
+      // 로컬 스토리지에 오늘 날짜로 팝업 숨김 처리가 되어있는지 확인
+      const hideDate = localStorage.getItem('hideSeminarPopup');
+      const today = new Date().toLocaleDateString();
+
+      if (hideDate !== today) {
+        document.getElementById('welcomePopup').classList.add('show');
+      }
+    }
+
+    function closePopup() {
+      // 오늘 하루 보지 않기가 체크되어 있으면 로컬 스토리지에 오늘 날짜 저장
+      const isChecked = document.getElementById('hidePopupCheckbox').checked;
+      if (isChecked) {
+        const today = new Date().toLocaleDateString();
+        localStorage.setItem('hideSeminarPopup', today);
+      }
+      
+      document.getElementById('welcomePopup').classList.remove('show');
+    }
 
     // --- 탭 전환 로직 ---
     function switchTab(tabId) {
@@ -465,7 +560,6 @@
       }
     }
 
-    // --- 4. 개별 신청 내역 삭제 기능 ---
     async function deleteApplicant(id) {
       if (!confirm('정말로 이 신청 내역을 삭제하시겠습니까?\n(삭제 후 데이터베이스에서 완전히 지워집니다.)')) return;
 
@@ -479,7 +573,6 @@
 
         alert('성공적으로 삭제되었습니다.');
         
-        // 삭제 후 테이블 및 남은 좌석 다시 불러오기
         loadAdminData();
         checkSeats();
       } catch (err) {
@@ -515,8 +608,11 @@
       document.body.removeChild(a);
     }
 
-    // 초기 로딩 시 좌석 수 체크
-    checkSeats();
+    // 페이지 로드 시 좌석 수 체크 및 팝업 띄우기 실행
+    window.onload = () => {
+      checkSeats();
+      checkAndShowPopup();
+    };
   </script>
 </body>
 </html>
