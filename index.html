@@ -56,6 +56,11 @@
     .form-control { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; transition: border-color 0.3s; }
     .form-control:focus { outline: none; border-color: var(--primary); }
     
+    /* 라디오 버튼 스타일 */
+    .radio-group { display: flex; gap: 20px; padding: 10px 0; }
+    .radio-label { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .radio-label input[type="radio"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
     .btn { background: var(--primary); color: white; border: none; padding: 15px 20px; border-radius: 8px; font-weight: 700; font-size: 16px; width: 100%; cursor: pointer; transition: 0.3s; display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
     .btn:hover { background: var(--primary-hover); }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
@@ -197,6 +202,19 @@
         </div>
 
         <div id="applyForm">
+          <!-- 재원/비재원 선택 라디오 버튼 추가 -->
+          <div class="form-group">
+            <label>학생 구분</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="studentType" value="재원생" checked> 재원생
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="studentType" value="비재원생"> 비재원생
+              </label>
+            </div>
+          </div>
+          
           <div class="form-group">
             <label>학생 이름</label>
             <input type="text" id="applyStudentName" class="form-control" placeholder="예: 홍길동">
@@ -247,7 +265,8 @@
           </div>
           <div class="ticket-body">
             <div class="ticket-info">
-              <div><strong>신청자:</strong> <span id="mpStudentName"></span> <span style="font-size: 13px; color: var(--text-muted);">(<span id="mpStudentSchool"></span>)</span></div>
+              <!-- 마이페이지 구분 표시 추가 -->
+              <div><strong>신청자:</strong> <span style="color: var(--primary); font-weight: 700; margin-right: 4px;">[<span id="mpStudentType"></span>]</span><span id="mpStudentName"></span> <span style="font-size: 13px; color: var(--text-muted);">(<span id="mpStudentSchool"></span>)</span></div>
               <div><strong>연락처:</strong> <span id="mpPhone"></span></div>
             </div>
             <hr style="border:0; border-top:1px dashed var(--border-color); margin: 20px 0;">
@@ -287,6 +306,7 @@
             <thead>
               <tr>
                 <th>순번</th>
+                <th>구분</th> <!-- 관리자 테이블 구분 컬럼 추가 -->
                 <th>학생 이름</th>
                 <th>학교/학년</th>
                 <th>학부모 연락처</th>
@@ -365,6 +385,8 @@
           document.getElementById('applyStudentName').disabled = true;
           document.getElementById('applyStudentSchool').disabled = true;
           document.getElementById('applyPhone').disabled = true;
+          // 라디오 버튼도 비활성화
+          document.querySelectorAll('input[name="studentType"]').forEach(radio => radio.disabled = true);
         } else {
           document.getElementById('seatStatus').style.display = 'block';
           document.getElementById('fullMessage').style.display = 'none';
@@ -373,6 +395,7 @@
           document.getElementById('applyStudentName').disabled = false;
           document.getElementById('applyStudentSchool').disabled = false;
           document.getElementById('applyPhone').disabled = false;
+          document.querySelectorAll('input[name="studentType"]').forEach(radio => radio.disabled = false);
         }
       } catch (err) {
         console.error('좌석 조회 실패:', err);
@@ -380,6 +403,8 @@
     }
 
     async function submitApplication() {
+      // 선택된 재원/비재원생 값 가져오기
+      const studentType = document.querySelector('input[name="studentType"]:checked').value;
       const studentName = document.getElementById('applyStudentName').value.trim();
       const studentSchool = document.getElementById('applyStudentSchool').value.trim();
       const parentPhone = document.getElementById('applyPhone').value.replace(/[^0-9]/g, '');
@@ -407,9 +432,10 @@
           resetApplyButton(); return;
         }
 
+        // 데이터베이스 전송 항목에 student_type 추가
         const { error: insertErr } = await _supabase
           .from('seminar_apps')
-          .insert([{ student_name: studentName, student_school: studentSchool, parent_phone: parentPhone }]);
+          .insert([{ student_type: studentType, student_name: studentName, student_school: studentSchool, parent_phone: parentPhone }]);
 
         if (insertErr) {
           if (insertErr.code === '23505') alert('이미 해당 연락처로 신청된 내역이 존재합니다.');
@@ -460,6 +486,8 @@
         document.getElementById('mypageLoginBox').style.display = 'none';
         document.getElementById('mypageResultBox').style.display = 'block';
         
+        // 마이페이지 티켓에 구분 데이터 연결
+        document.getElementById('mpStudentType').innerText = data.student_type || '비재원생';
         document.getElementById('mpStudentName').innerText = data.student_name;
         document.getElementById('mpStudentSchool').innerText = data.student_school;
         
@@ -501,7 +529,7 @@
 
     async function loadAdminData() {
       const tbody = document.getElementById('adminTableBody');
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">데이터를 불러오는 중...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">데이터를 불러오는 중...</td></tr>';
 
       try {
         const { data, error } = await _supabase
@@ -515,7 +543,7 @@
         document.getElementById('totalApplicantsCount').innerText = data.length;
 
         if (data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">신청자가 없습니다.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">신청자가 없습니다.</td></tr>';
           return;
         }
 
@@ -530,9 +558,11 @@
           let phone = app.parent_phone;
           if(phone.length === 11) phone = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
 
+          // 테이블에 데이터 출력 추가
           return `
             <tr>
               <td>${index + 1}</td>
+              <td><span style="font-weight: 700; color: ${app.student_type === '재원생' ? 'var(--primary)' : 'var(--text-muted)'};">${app.student_type || '비재원생'}</span></td>
               <td><strong>${app.student_name}</strong></td>
               <td>${app.student_school}</td>
               <td>${phone}</td>
@@ -548,7 +578,7 @@
 
       } catch (err) {
         console.error('관리자 데이터 로드 실패:', err);
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>';
       }
     }
 
@@ -578,7 +608,8 @@
         alert('다운로드할 데이터가 없습니다.'); return;
       }
 
-      let csvContent = "\uFEFF순번,학생 이름,학교/학년,학부모 연락처,신청 일시\n";
+      // 엑셀 다운로드 헤더에 '구분' 추가
+      let csvContent = "\uFEFF순번,구분,학생 이름,학교/학년,학부모 연락처,신청 일시\n";
       
       adminData.forEach((app, index) => {
         let phone = app.parent_phone;
@@ -587,7 +618,8 @@
         const dateObj = new Date(app.created_at);
         const dateStr = dateObj.toLocaleString('ko-KR');
 
-        csvContent += `"${index + 1}","${app.student_name}","${app.student_school}","${phone}","${dateStr}"\n`;
+        // CSV 데이터에 student_type 변수 추가 출력
+        csvContent += `"${index + 1}","${app.student_type || '비재원생'}","${app.student_name}","${app.student_school}","${phone}","${dateStr}"\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
