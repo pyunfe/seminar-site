@@ -46,6 +46,28 @@
     .view-section.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* 부부 동반 참석 안내 박스 스타일 */
+    .highlight-alert {
+      background-color: #fff5f5;
+      border: 2px dashed var(--danger);
+      padding: 18px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      text-align: center;
+      font-weight: 800;
+      color: var(--danger);
+      font-size: 17px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .highlight-alert span {
+      display: block;
+      font-size: 14px;
+      color: var(--danger-hover);
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
     .status-box { background: #fdf6f6; border: 1px solid #fad4d4; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px; }
     .status-box .label { font-size: 14px; font-weight: 700; color: var(--primary); }
     .status-box .count { font-size: 32px; font-weight: 900; color: var(--text-main); margin-top: 5px; }
@@ -193,6 +215,13 @@
     <!-- 1. 신청하기 화면 -->
     <div id="applyView" class="view-section active">
       <div style="max-width: 450px; margin: 0 auto;">
+        
+        <!-- 부부 동반 참석 안내 강조 박스 -->
+        <div class="highlight-alert">
+          <i class="fa-solid fa-triangle-exclamation"></i> 부모님 두 분 모두 참석 시 각각 따로 신청 필수!
+          <span>(예: '홍길동 모', '홍길동 부' / 연락처도 각각 본인 번호로 기재)</span>
+        </div>
+
         <div class="status-box">
           <div id="seatStatus">
             <div class="label">현재 잔여 좌석</div>
@@ -216,8 +245,8 @@
           </div>
           
           <div class="form-group">
-            <label>학생 이름</label>
-            <input type="text" id="applyStudentName" class="form-control" placeholder="예: 홍길동">
+            <label>이름</label>
+            <input type="text" id="applyStudentName" class="form-control" placeholder="예: 홍길동 모">
           </div>
           <div class="form-group">
             <label>학교 및 학년</label>
@@ -307,7 +336,7 @@
               <tr>
                 <th>순번</th>
                 <th>구분</th> <!-- 관리자 테이블 구분 컬럼 추가 -->
-                <th>학생 이름</th>
+                <th>이름</th>
                 <th>학교/학년</th>
                 <th>학부모 연락처</th>
                 <th>신청 일시</th>
@@ -609,7 +638,7 @@
       }
 
       // 엑셀 다운로드 헤더에 '구분' 추가
-      let csvContent = "\uFEFF순번,구분,학생 이름,학교/학년,학부모 연락처,신청 일시\n";
+      let csvContent = "\uFEFF순번,구분,이름,학교/학년,학부모 연락처,신청 일시\n";
       
       adminData.forEach((app, index) => {
         let phone = app.parent_phone;
